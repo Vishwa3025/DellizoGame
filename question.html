@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Warehouse Quiz Game</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background-color: #1e3a8a;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      font-family: 'Arial', sans-serif;
+      position: relative;
+    }
+
+    #quiz-container {
+      width: 90%;
+      max-width: 400px;
+      padding: 16px;
+      background-color: rgba(255, 255, 255, 0.9);
+      border-radius: 12px;
+      box-shadow: 0px 8px 20px rgba(0, 0, 0, 0.2);
+      z-index: 1;
+    }
+
+    .logistics-item {
+      position: absolute;
+      opacity: 0.2;
+      animation: float 20s infinite linear;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(-100px) rotate(0deg); opacity: 0.3; }
+      50% { transform: translateY(300px) rotate(180deg); opacity: 0.1; }
+      100% { transform: translateY(-100px) rotate(360deg); opacity: 0.3; }
+    }
+
+    .truck { left: 10%; animation-duration: 25s; }
+    .container { right: 15%; animation-duration: 30s; }
+    .warehouse { left: 70%; animation-duration: 35s; }
+    .logistics { right: 30%; animation-duration: 22s; }
+
+    .option {
+      background-color: #ffffff;
+      padding: 12px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s, transform 0.3s;
+      font-size: 1rem;
+    }
+
+    .option:hover { 
+      background-color: #3b82f6;
+      color: white; 
+      transform: scale(1.05); 
+    }
+
+    .correct { background-color: #4ade80 !important; }
+    .wrong { background-color: #f87171 !important; }
+
+    /* Hint styles */
+    #hint-popup {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      background-color: rgba(255, 239, 0, 0.9);
+      border: 1px solid #eab308;
+      border-radius: 8px;
+      padding: 10px;
+      display: none;
+      z-index: 2;
+      text-align: center;
+      margin-top: 8px;
+    }
+
+    /* Progress Bar Styles */
+    #progress-container {
+      height: 8px;
+      background-color: #e5e7eb;
+      border-radius: 5px;
+      margin-top: 10px;
+    }
+    
+    #progress-bar {
+      height: 100%;
+      background-color: #3b82f6;
+      border-radius: 5px;
+      width: 0%;
+      transition: width 0.5s;
+    }
+
+    /* Thank You Message Styles */
+    #thank-you-message {
+      display: none;
+      font-size: 1.5rem;
+      color: #2e6da4;
+      text-align: center;
+      margin-top: 20px;
+      animation: fadeIn 2s, bounce 1s infinite;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-20px); }
+      60% { transform: translateY(-10px); }
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+      #quiz-container {
+        padding: 12px;
+      }
+      #thank-you-message {
+        font-size: 1.2rem;
+      }
+      .option {
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Background Graphics -->
+  <img src="https://cdn-icons-png.flaticon.com/512/3036/3036962.png" alt="Truck" class="logistics-item truck" width="100">
+  <img src="https://cdn-icons-png.flaticon.com/512/2942/2942811.png" alt="Container" class="logistics-item container" width="80">
+  <img src="https://cdn-icons-png.flaticon.com/512/2730/2730540.png" alt="Warehouse" class="logistics-item warehouse" width="120">
+  <img src="https://cdn-icons-png.flaticon.com/512/3523/3523063.png" alt="Logistics" class="logistics-item logistics" width="90">
+
+  <div id="quiz-container">
+    <div class="text-center">
+      <h1 class="text-3xl font-extrabold text-[#3b82f6] mb-4">Warehouse Quiz</h1>
+      <p class="text-[#3b82f6] font-semibold text-xl">Answer the questions correctly!</p>
+    </div>
+
+    <!-- Progress Bar -->
+    <div id="progress-container">
+      <div id="progress-bar"></div>
+    </div>
+
+    <div id="quiz-section" class="mt-8">
+      <h2 id="question" class="text-xl font-semibold text-[#3b82f6] mb-4"></h2>
+      <div id="hint-popup"></div>
+      <div id="options" class="grid gap-4"></div>
+
+      <!-- Score Display -->
+      <div id="score-display" class="text-blue-600 font-bold text-lg mt-4">Score: 0</div>
+      
+      <button 
+        id="next-button" 
+        class="hidden mt-6 w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">
+        Next Question
+      </button>
+    </div>
+
+    <div class="mt-8 flex justify-between items-center">
+      <button 
+        id="hint-button" 
+        class="bg-[#3b82f6] text-white px-4 py-2 rounded-md">
+        Get Hint (2 Left)
+      </button>
+    </div>
+
+    <!-- Thank You Message -->
+    <div id="thank-you-message"></div>
+  </div>
+
+  <script>
+    const questions = [
+      { 
+        question: "What is Dellizo primarily focused on?",
+        answers: ["Financial Consulting", "Warehouse Management", "Transportation Services", "Retail Marketing"],
+        correct: "Warehouse Management", 
+        hints: [
+          "It's related to logistics and supply chain.",
+          "They help businesses find storage solutions."
+        ]
+      },
+      { 
+        question: "What service does Dellizo offer to its users?",
+        answers: ["Data Analysis", "Warehouse Booking", "E-commerce Solutions", "Social Media Management"],
+        correct: "Warehouse Booking", 
+        hints: [
+          "Users can book space through their platform.",
+          "It's an app for connecting space seekers with warehouse owners."
+        ]
+      },
+      { 
+        question: "Which industry does Dellizo primarily serve?",
+        answers: ["Healthcare", "Manufacturing", "Food and Beverage", "Education"],
+        correct: "Manufacturing", 
+        hints: [
+          "It's an industry focused on producing goods.",
+          "Warehouse space is critical for storage and distribution."
+        ]
+      },
+      { 
+        question: "What is a key feature of the Dellizo app?",
+        answers: ["Real-time Stock Updates", "Digital Signatures", "Payment Facilitation", "All of the Above"],
+        correct: "All of the Above", 
+        hints: [
+          "It integrates multiple functionalities for users.",
+          "It aims to streamline warehouse operations."
+        ]
+      },
+      { 
+        question: "What advantage does Dellizo provide for warehouse owners?",
+        answers: ["Increased Visibility", "Reduced Costs", "No Competition", "Guaranteed Occupancy"],
+        correct: "Increased Visibility", 
+        hints: [
+          "It helps them reach more potential clients.",
+          "Warehouse owners can showcase their space effectively."
+        ]
+      }
+    ];
+
+    let currentQuestion = 0;
+    let score = 0;
+    let hintsUsed = 0;
+
+    const questionElement = document.getElementById("question");
+    const optionsElement = document.getElementById("options");
+    const nextButton = document.getElementById("next-button");
+    const scoreDisplay = document.getElementById("score-display");
+    const hintPopup = document.getElementById("hint-popup");
+    const hintButton = document.getElementById("hint-button");
+    const progressBar = document.getElementById("progress-bar");
+    const thankYouMessage = document.getElementById("thank-you-message");
+
+    function displayQuestion() {
+      const question = questions[currentQuestion];
+      questionElement.textContent = question.question;
+      optionsElement.innerHTML = "";
+
+      question.answers.forEach(answer => {
+        const button = document.createElement("button");
+        button.textContent = answer;
+        button.className = "option w-full";
+        button.addEventListener("click", () => selectAnswer(answer, button));
+        optionsElement.appendChild(button);
+      });
+
+      // Update progress bar
+      progressBar.style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+
+      hintsUsed = 0; // Reset hints for the new question
+      hintPopup.style.display = 'none'; // Hide hint popup
+      hintButton.textContent = `Get Hint (2 Left)`; // Reset hint button text
+      hintButton.disabled = false; // Enable hint button for the current question
+    }
+
+    function selectAnswer(answer, button) {
+      const question = questions[currentQuestion];
+
+      if (answer === question.correct) {
+        score++;
+        button.classList.add("correct");
+      } else {
+        button.classList.add("wrong");
+        const correctButton = Array.from(optionsElement.children).find(
+          btn => btn.textContent === question.correct
+        );
+        correctButton.classList.add("correct");
+      }
+
+      // Disable all options after selection
+      Array.from(optionsElement.children).forEach(btn => {
+        btn.disabled = true;
+      });
+
+      scoreDisplay.textContent = `Score: ${score}`;
+      nextButton.classList.remove("hidden");
+    }
+
+    hintButton.addEventListener("click", () => {
+      const question = questions[currentQuestion];
+
+      if (hintsUsed < 2) {
+        hintPopup.textContent = question.hints[hintsUsed];
+        hintPopup.style.display = 'block';
+        hintsUsed++;
+        hintButton.textContent = `Get Hint (${2 - hintsUsed} Left)`;
+
+        if (hintsUsed === 2) {
+          hintButton.disabled = true;
+        }
+      } else {
+        hintPopup.textContent = "You have used all your hints.";
+        hintPopup.style.display = 'block';
+      }
+    });
+
+    nextButton.addEventListener("click", () => {
+      currentQuestion++;
+      if (currentQuestion < questions.length) {
+        displayQuestion();
+        nextButton.classList.add("hidden");
+        hintPopup.style.display = 'none'; // Hide hint popup on next question
+        hintButton.disabled = false; // Re-enable the hint button for the next question
+      } else {
+        endGame();
+      }
+    });
+
+    function endGame() {
+      document.getElementById("quiz-section").style.display = 'none';
+      thankYouMessage.style.display = 'block';
+      thankYouMessage.textContent = `Thanks for participating! Your score is: ${score}`;
+      thankYouMessage.style.color = '#3b82f6'; // Change text color
+      thankYouMessage.style.fontSize = '24px'; // Change font size
+      thankYouMessage.style.fontWeight = 'bold'; // Make text bold
+      hintButton.style.display = 'none'; // Remove hint button on final score page
+    }
+
+    // Initialize the game
+    displayQuestion();
+  </script>
+</body>
+</html>
