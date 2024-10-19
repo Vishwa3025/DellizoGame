@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dellizo Game - login</title>
+  <title>Admin Dashboard - User Login Info</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
   <style>
-    /* Background with animated stars */
+    /* Styling remains the same as before */
     body {
       background: radial-gradient(circle at 50% 50%, #0d1117, #1c1c29);
       height: 100vh;
@@ -41,55 +41,33 @@
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
       border-radius: 20px;
       animation: float 6s ease-in-out infinite;
-      position: relative; /* Added for layering with stars */
-      z-index: 1; /* Bring glass card above the stars */
-      padding: 20px; /* Added padding */
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-10px); }
-    }
-
-    /* Additional styles for the logo, form, and other elements */
-    .logo {
-      width: 100px; /* Adjust as needed */
-      margin-bottom: 20px;
-    }
-
-    .contact-info {
-      margin-top: 20px;
-      font-size: 0.875rem;
-      color: #ffffff;
-      text-align: center; /* Center the contact info */
+      position: relative;
+      z-index: 1;
+      padding: 30px;
     }
   </style>
 </head>
 
 <body>
-
   <div class="stars"></div> <!-- Stars Background -->
 
-  <!-- Admin Login Form -->
   <div id="adminLoginForm" class="glass p-8 w-full max-w-md">
     <h2 class="text-2xl font-bold mb-4 text-center text-white">User Login</h2>
-    <form id="adminLogin" class="space-y-4">
-      <input type="text" id="username" class="w-full p-3 border rounded bg-white/30 text-white placeholder-gray-300 focus:outline-none" 
+    <form id="loginForm" class="space-y-4">
+      <input type="text" id="username" 
+             class="w-full p-3 border rounded bg-white/30 text-white placeholder-gray-300 focus:outline-none" 
              placeholder="Your Name" required>
-      <input type="email" id="gmail" class="w-full p-3 border rounded bg-white/30 text-white placeholder-gray-300 focus:outline-none" 
+      <input type="email" id="gmail" 
+             class="w-full p-3 border rounded bg-white/30 text-white placeholder-gray-300 focus:outline-none" 
              placeholder="Gmail ID" required>
-      <input type="tel" id="contact" class="w-full p-3 border rounded bg-white/30 text-white placeholder-gray-300 focus:outline-none" 
-             placeholder="Contact Number" required>
       <button type="submit" class="bg-blue-500 text-white w-full py-3 rounded hover:bg-blue-600">
         Log In
       </button>
     </form>
   </div>
 
-  <!-- Admin Dashboard Section -->
   <div id="adminDashboard" class="hidden glass p-8 w-full max-w-4xl mt-10">
     <h2 class="text-3xl font-bold mb-4 text-center text-white">Admin Dashboard</h2>
-
     <button id="downloadDataButton" class="bg-green-500 text-white py-2 px-6 rounded hover:bg-green-600 mb-4">
       Download All User Data
     </button>
@@ -99,7 +77,7 @@
         <tr class="bg-gray-100">
           <th class="border border-gray-300 px-4 py-2">Name</th>
           <th class="border border-gray-300 px-4 py-2">Email</th>
-          <th class="border border-gray-300 px-4 py-2">Contact Number</th> <!-- Added Contact Number Column -->
+          <th class="border border-gray-300 px-4 py-2">Device ID</th>
           <th class="border border-gray-300 px-4 py-2">Login Time</th>
         </tr>
       </thead>
@@ -108,37 +86,50 @@
   </div>
 
   <script>
-    const ADMIN_GMAIL = "admin@gmail.com"; // Admin's Gmail ID
+    const MASTER_ADMIN_EMAIL = "admin@gmail.com"; // Master admin Gmail
 
-    document.getElementById("adminLogin").addEventListener("submit", (e) => {
+    // Generate or retrieve a unique device ID for the user
+    function getDeviceID() {
+      let deviceID = localStorage.getItem("deviceID");
+      if (!deviceID) {
+        deviceID = `device-${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem("deviceID", deviceID);
+      }
+      return deviceID;
+    }
+
+    document.getElementById("loginForm").addEventListener("submit", (e) => {
       e.preventDefault();
       const name = document.getElementById("username").value;
       const gmail = document.getElementById("gmail").value;
-      const contact = document.getElementById("contact").value; // Capture contact number
       const loginTime = new Date().toLocaleString();
+      const deviceID = getDeviceID();
 
-      if (gmail === ADMIN_GMAIL) {
-        alert("Login successful!");
+      if (gmail === MASTER_ADMIN_EMAIL) {
+        alert("Master Admin Login Successful!");
         showAdminDashboard();
       } else {
-        saveFailedLogin(name, gmail, contact, loginTime); // Save contact info on failed login
-        alert("Invalid Gmail ID. Redirecting to question page...");
-        window.location.href = "question.html"; // Redirect on failed login
+        saveUserData({ name, gmail, deviceID, loginTime });
+        alert("User login saved. You can now browse the site.");
+        window.location.href = "question.html";
       }
     });
 
+    // Save user data to localStorage
+    function saveUserData(user) {
+      let allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
+      allUsers.push(user);
+      localStorage.setItem("allUsers", JSON.stringify(allUsers));
+    }
+
+    // Show the admin dashboard
     function showAdminDashboard() {
       document.getElementById("adminLoginForm").classList.add("hidden");
       document.getElementById("adminDashboard").classList.remove("hidden");
       loadUserData();
     }
 
-    function saveFailedLogin(name, gmail, contact, loginTime) {
-      const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
-      allUsers.push({ Name: name, Email: gmail, Contact: contact, LoginTime: loginTime }); // Store contact info
-      localStorage.setItem("allUsers", JSON.stringify(allUsers));
-    }
-
+    // Load all users' data into the table
     function loadUserData() {
       const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
       const userTableBody = document.getElementById("userTableBody");
@@ -147,15 +138,16 @@
       allUsers.forEach((user) => {
         const row = document.createElement("tr");
         row.innerHTML = `
-          <td class="border border-gray-300 px-4 py-2">${user.Name}</td>
-          <td class="border border-gray-300 px-4 py-2">${user.Email}</td>
-          <td class="border border-gray-300 px-4 py-2">${user.Contact}</td> <!-- Display contact number -->
-          <td class="border border-gray-300 px-4 py-2">${user.LoginTime}</td>
+          <td class="border border-gray-300 px-4 py-2">${user.name}</td>
+          <td class="border border-gray-300 px-4 py-2">${user.gmail}</td>
+          <td class="border border-gray-300 px-4 py-2">${user.deviceID}</td>
+          <td class="border border-gray-300 px-4 py-2">${user.loginTime}</td>
         `;
         userTableBody.appendChild(row);
       });
     }
 
+    // Download all user data as Excel
     document.getElementById("downloadDataButton").addEventListener("click", () => {
       const allUsers = JSON.parse(localStorage.getItem("allUsers")) || [];
       if (allUsers.length === 0) {
@@ -168,6 +160,5 @@
       XLSX.writeFile(workbook, "user_data.xlsx");
     });
   </script>
-
 </body>
 </html>
