@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login</title>
+</head>
+<body>
+  <form id="loginForm">
+    <input type="text" id="username" placeholder="Enter Username" required><br>
+    <input type="email" id="gmail" placeholder="Enter Email" required><br>
+    <button type="submit">Login</button>
+  </form>
+
+  <script>
+    // Generate a unique session ID
+    function generateSessionID() {
+      return 'session-' + Math.random().toString(36).substr(2, 9);
+    }
+
+    // Save user data in localStorage
+    function saveUserData(userData) {
+      const sessionID = generateSessionID();
+      sessionStorage.setItem('sessionID', sessionID); // Save session ID temporarily
+      let allUsers = JSON.parse(localStorage.getItem('users')) || []; // Get all users
+      allUsers.push({ sessionID, ...userData }); // Add new user data
+      localStorage.setItem('users', JSON.stringify(allUsers)); // Save back to localStorage
+    }
+
+    // Handle form submission
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault(); // Prevent page reload
+      const username = document.getElementById('username').value;
+      const gmail = document.getElementById('gmail').value;
+      const loginTime = new Date().toLocaleString();
+
+      const userData = { username, gmail, loginTime };
+      saveUserData(userData); // Save user data
+
+      alert('Login successful! Redirecting to question.html...');
+      window.location.href = 'question.html'; // Redirect
+    });
+  </script>
+</body>
+</html>

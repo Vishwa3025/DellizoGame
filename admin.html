@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h1>Master Admin Dashboard</h1>
+  <button id="loadData">Load All User Data</button>
+  <div id="userList"></div>
+
+  <script>
+    // Load all user data from localStorage
+    function loadAllUserData() {
+      const users = JSON.parse(localStorage.getItem('users')) || [];
+      const userList = document.getElementById('userList');
+
+      if (users.length === 0) {
+        userList.innerHTML = '<p>No user data found.</p>';
+        return;
+      }
+
+      // Display all user data
+      users.forEach((user) => {
+        const userDiv = document.createElement('div');
+        userDiv.innerHTML = `
+          <p><strong>Session ID:</strong> ${user.sessionID}</p>
+          <p><strong>Username:</strong> ${user.username}</p>
+          <p><strong>Email:</strong> ${user.gmail}</p>
+          <p><strong>Login Time:</strong> ${user.loginTime}</p>
+          <hr>
+        `;
+        userList.appendChild(userDiv);
+      });
+    }
+
+    // Load data when button is clicked
+    document.getElementById('loadData').addEventListener('click', loadAllUserData);
+  </script>
+</body>
+</html>
